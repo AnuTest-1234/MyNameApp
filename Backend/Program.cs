@@ -1,36 +1,39 @@
-using Microsoft.EntityFrameworkCore;
-
 var builder = WebApplication.CreateBuilder(args);
 
-// 1. Tell the app to use a Database
-builder.Services.AddDbContext<NameDbContext>(options =>
-    options.UseSqlServer(builder.Configuration.GetConnectionString("MyDbConnection")));
+// Add services to the container.
+// Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
+builder.Services.AddOpenApi();
 
 var app = builder.Build();
 
-// 2. Make it show our HTML page
-app.UseDefaultFiles();
-app.UseStaticFiles();
+// Configure the HTTP request pipeline.
+if (app.Environment.IsDevelopment())
+{
+    app.MapOpenApi();
+}
 
-// 3. The "Save" button logic
-app.MapPost("/names", async (NameItem item, NameDbContext db) => {
-    db.Names.Add(item);
-    await db.SaveChangesAsync();
-    return Results.Ok();
-});
+var summaries = new[]
+{
+    "Freezing", "Bracing", "Chilly", "Cool", "Mild", "Warm", "Balmy", "Hot", "Sweltering", "Scorching"
+};
 
-// 4. The "Show List" logic
-app.MapGet("/names", async (NameDbContext db) => await db.ToListAsync());
+app.MapGet("/weatherforecast", () =>
+{
+    var forecast =  Enumerable.Range(1, 5).Select(index =>
+        new WeatherForecast
+        (
+            DateOnly.FromDateTime(DateTime.Now.AddDays(index)),
+            Random.Shared.Next(-20, 55),
+            summaries[Random.Shared.Next(summaries.Length)]
+        ))
+        .ToArray();
+    return forecast;
+})
+.WithName("GetWeatherForecast");
 
 app.Run();
 
-// The "Notebook" structure for our database
-class NameItem {
-    public int Id { get; set; }
-    public string Text { get; set; } = "";
-}
-
-class NameDbContext : DbContext {
-    public NameDbContext(DbContextOptions<NameDbContext> options) : base(options) { }
-    public DbSet<NameItem> Names => Set<NameItem>();
+record WeatherForecast(DateOnly Date, int TemperatureC, string? Summary)
+{
+    public int TemperatureF => 32 + (int)(TemperatureC / 0.5556);
 }
