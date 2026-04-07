@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html>
+<body>
+    <h1>Name Collector</h1>
+    <input id="nameInput" placeholder="Enter a name">
+    <button onclick="saveName()">Save</button>
+    <ul id="list"></ul>
+
+    <script>
+        async function loadNames() {
+            const res = await fetch('/names');
+            const names = await res.json();
+            document.getElementById('list').innerHTML = names.map(n => `<li>${n.text}</li>`).join('');
+        }
+
+        async function saveName() {
+            const text = document.getElementById('nameInput').value;
+            await fetch('/names', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ text })
+            });
+            loadNames();
+        }
+        loadNames();
+    </script>
+</body>
+</html>
